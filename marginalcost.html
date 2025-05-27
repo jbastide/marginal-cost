@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Marginal Cost Calculator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            scroll-behavior: smooth;
+        }
+
+        /* Tooltip Styles (Non-Tailwind) */
+        .tooltip-container {
+            position: relative;
+            display: inline-block;
+            cursor: help;
+        }
+        .tooltip-text {
+            visibility: hidden;
+            width: 220px;
+            background-color: #333;
+            color: #fff;
+            text-align: left;
+            font-weight: normal;
+            text-transform: none;
+            border-radius: 6px;
+            padding: 8px 10px;
+            position: absolute;
+            z-index: 10;
+            bottom: 135%;
+            left: 50%;
+            margin-left: -110px;
+            opacity: 0;
+            transition: opacity 0.3s ease-in-out, visibility 0.3s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            font-size: 0.8rem;
+        }
+        .tooltip-container:hover .tooltip-text,
+        .tooltip-container:focus-within .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        .tooltip-text::after { /* Arrow */
+            content: "";
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            margin-left: -5px;
+            border-width: 5px;
+            border-style: solid;
+            border-color: #333 transparent transparent transparent;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex items-center justify-center p-4 sm:p-6">
+    <div class="container mx-auto max-w-xl">
+        <header class="mb-10">
+            <h1 class="text-3xl sm:text-4xl font-extrabold text-center text-gray-800">
+                Ads Marginal Cost <span class="text-indigo-600">Calculator</span>
+            </h1>
+        </header>
+
+        <div id="step1Card" class="bg-white p-6 rounded-xl shadow-lg mb-12 transition-all duration-300 ease-in-out">
+            <h2 class="text-3xl font-bold text-gray-800 mb-5"><span class="text-indigo-600 font-semibold">Step 1:</span> Enter Your Data</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 mb-6">
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">Period 1 (Baseline)</h3>
+                    <div>
+                        <label for="s1" class="block text-sm font-medium text-gray-700 mb-1">Spend ($)</label>
+                        <input type="number" id="s1" class="mt-1 block w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-600 sm:text-sm" placeholder="e.g., 1000">
+                    </div>
+                    <div class="mt-4">
+                        <label for="c1" class="block text-sm font-medium text-gray-700 mb-1">Conversions</label>
+                        <input type="number" id="c1" class="mt-1 block w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-600 sm:text-sm" placeholder="e.g., 100">
+                    </div>
+                </div>
+                <div>
+                    <h3 class="text-lg font-semibold text-gray-700 mb-3">Period 2 (Comparison)</h3>
+                    <div>
+                        <label for="s2" class="block text-sm font-medium text-gray-700 mb-1">Spend ($)</label>
+                        <input type="number" id="s2" class="mt-1 block w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-600 sm:text-sm" placeholder="e.g., 1500">
+                    </div>
+                    <div class="mt-4">
+                        <label for="c2" class="block text-sm font-medium text-gray-700 mb-1">Conversions</label>
+                        <input type="number" id="c2" class="mt-1 block w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-600 sm:text-sm" placeholder="e.g., 120">
+                    </div>
+                </div>
+            </div>
+            <div class="mb-6">
+                <label for="marginalCostLimit" class="block text-sm font-medium text-gray-700 mb-1">Your Marginal Cost Limit ($) <span class="text-xs text-gray-500">(Optional)</span></label>
+                <input type="number" id="marginalCostLimit" class="mt-1 block w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-600 sm:text-sm" placeholder="e.g., 25">
+            </div>
+
+            <button id="calculateBtn" class="w-full px-6 py-3.5 border border-transparent rounded-lg shadow-md text-base font-semibold text-white bg-indigo-600 hover:bg-indigo-700 hover:shadow-lg active:scale-[0.98] active:shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-all duration-150 ease-in-out">
+                Calculate Marginal Cost
+            </button>
+        </div>
+
+        <div id="step2Card" class="bg-white p-6 rounded-xl shadow-lg mb-12 transition-all duration-300 ease-in-out">
+            <h2 class="text-3xl font-bold text-gray-800 mb-2"><span class="text-indigo-600 font-semibold">Step 2:</span> Model Scenario</h2>
+            <p class="text-sm text-gray-600 mb-5">
+                This step models a scenario by adding 'N' additional conversions (at your 'Assumed CPA')
+                to the <strong>Period 2 data from Step 1</strong>. It then calculates the marginal cost
+                against a <strong>Period 1 baseline</strong> (either from Step 1, or new data entered below).
+            </p>
+
+            <div class="border-t border-gray-200 pt-4 mb-6">
+                 <h3 class="text-lg font-semibold text-gray-700 mb-3">Define Projection</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <div>
+                        <label for="n_add" class="block text-sm font-medium text-gray-700 mb-1">Additional Conversions (N)</label>
+                        <input type="number" id="n_add" class="mt-1 block w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-600 sm:text-sm" placeholder="e.g., 10">
+                    </div>
+                    <div>
+                        <label for="cpa_add" class="block text-sm font-medium text-gray-700 mb-1">
+                            Assumed CPA for these N Conversions ($)
+                            <span class="tooltip-container" tabindex="0">
+                                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" class="w-4 h-4 inline-block ml-1 text-gray-500">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 11-18 0 9 9 0 0118 0zm-9 5.25h.008v.008H12v-.008z" />
+                                </svg>
+                                <span class="tooltip-text">Enter the estimated Cost Per Acquisition (CPA) specifically for these 'N' additional conversions.</span>
+                            </span>
+                        </label>
+                        <input type="number" id="cpa_add" class="mt-1 block w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-600 sm:text-sm" placeholder="e.g., 20">
+                    </div>
+                </div>
+            </div>
+
+            <div class="border-t border-gray-200 pt-4 mb-6">
+                <h3 class="text-lg font-semibold text-gray-700 mb-1">Optional: New Period 1 Baseline for Modeling</h3>
+                <p class="text-xs text-gray-500 mb-3">Leave blank to use Period 1 data from Step 1.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+                    <div>
+                        <label for="model_s1" class="block text-sm font-medium text-gray-700 mb-1">New Period 1 Spend ($)</label>
+                        <input type="number" id="model_s1" class="mt-1 block w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-600 sm:text-sm" placeholder="e.g., 900">
+                    </div>
+                    <div>
+                        <label for="model_c1" class="block text-sm font-medium text-gray-700 mb-1">New Period 1 Conversions</label>
+                        <input type="number" id="model_c1" class="mt-1 block w-full px-3 py-2.5 bg-white border border-gray-300 rounded-lg shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-600 sm:text-sm" placeholder="e.g., 90">
+                    </div>
+                </div>
+            </div>
+
+            <button id="modelBtn" class="w-full px-6 py-3.5 rounded-lg shadow-md text-base font-semibold transition-all duration-150 ease-in-out focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 bg-white text-indigo-600 border border-indigo-600 hover:bg-indigo-50 active:scale-[0.98] active:shadow-sm">
+                Calculate Modeled Marginal Cost
+            </button>
+        </div>
+
+        <div id="unifiedResultsCard" class="bg-white p-6 rounded-xl shadow-lg transition-all duration-300 ease-in-out hidden">
+            <h2 class="text-3xl font-bold text-gray-800 mb-5">Results Summary</h2>
+            <div id="initialResultSummaryContainer" class="mb-6 hidden">
+                <h3 class="text-xl font-semibold text-gray-700 mb-3">Initial Calculation (from Step 1)</h3>
+                <div id="initialResultContent"></div>
+            </div>
+            <div id="modeledResultSummaryContainer" class="hidden">
+                <h3 class="text-xl font-semibold text-gray-700 mb-3">Modeled Scenario (from Step 2)</h3>
+                <div id="modeledResultContent"></div>
+            </div>
+             <p id="noResultsMessage" class="text-gray-500 hidden">Enter data in Step 1 to see results.</p>
+        </div>
+
+
+        <footer class="text-center text-sm text-gray-500 mt-8 mb-6">
+            <p>&copy; <span id="currentYear"></span> Marginal Cost Tool. For illustrative purposes only.</p>
+        </footer>
+    </div>
+
+    <script>
+        // --- DOM Elements ---
+        const s1Input = document.getElementById('s1');
+        const c1Input = document.getElementById('c1');
+        const s2Input = document.getElementById('s2');
+        const c2Input = document.getElementById('c2');
+        const marginalCostLimitInput = document.getElementById('marginalCostLimit');
+        const calculateBtn = document.getElementById('calculateBtn');
+
+        const nAddInput = document.getElementById('n_add');
+        const cpaAddInput = document.getElementById('cpa_add');
+        const model_s1Input = document.getElementById('model_s1');
+        const model_c1Input = document.getElementById('model_c1');
+        const modelBtn = document.getElementById('modelBtn');
+
+        const unifiedResultsCard = document.getElementById('unifiedResultsCard');
+        const initialResultSummaryContainer = document.getElementById('initialResultSummaryContainer');
+        const initialResultContent = document.getElementById('initialResultContent');
+        const modeledResultSummaryContainer = document.getElementById('modeledResultSummaryContainer');
+        const modeledResultContent = document.getElementById('modeledResultContent');
+        const noResultsMessage = document.getElementById('noResultsMessage');
+
+        document.getElementById('currentYear').textContent = new Date().getFullYear();
+
+        const icons = {
+            success: `<svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+            warning: `<svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>`,
+            error: `<svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`,
+            info: `<svg class="h-4 w-4 mr-1.5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`
+        };
+        const resultTypeStyles = {
+            success: { container: 'bg-green-50 border-green-500 text-green-800', title: 'text-green-700', hero: 'text-green-700' },
+            warning: { container: 'bg-yellow-50 border-yellow-500 text-yellow-800', title: 'text-yellow-700', hero: 'text-yellow-700' },
+            error: { container: 'bg-red-50 border-red-500 text-red-800', title: 'text-red-700', hero: 'text-red-700' },
+            info: { container: 'bg-blue-50 border-blue-500 text-blue-800', title: 'text-blue-700', hero: 'text-blue-700' }
+        };
+
+        function renderResult(targetElement, resultData) {
+            const { type, title, hero, context } = resultData;
+            const styles = resultTypeStyles[type] || resultTypeStyles.info;
+
+            const resultBoxHTML = `
+                <div class="p-5 rounded-lg border-l-4 ${styles.container}">
+                    <div class="flex items-center text-xs font-semibold uppercase tracking-wider ${styles.title}">
+                        ${icons[type] || icons['info']}
+                        <span>${title}</span>
+                    </div>
+                    <div class="text-3xl font-extrabold mt-1.5 ${styles.hero}">${hero}</div>
+                    <div class="text-sm text-gray-600 mt-1.5">${context}</div>
+                </div>
+            `;
+            targetElement.innerHTML = resultBoxHTML;
+        }
+
+        function calculateMarginalCost(spend1Str, conv1Str, spend2Str, conv2Str, marginalCostLimitStr, isModeling = false, originalP2SpendStr = null, originalP2ConvStr = null, nAddStr = null, cpaAddStr = null) {
+            const s1 = parseFloat(spend1Str);
+            const c1 = parseFloat(conv1Str);
+            const s2 = parseFloat(spend2Str);
+            const c2 = parseFloat(conv2Str);
+            const marginalCostLimit = parseFloat(marginalCostLimitStr);
+
+            let result = {};
+
+            if (isNaN(s1) || isNaN(c1) || isNaN(s2) || isNaN(c2) || s1 < 0 || c1 < 0 || s2 < 0 || c2 < 0) {
+                return { type: 'error', title: 'Invalid Input', hero: 'Check Numbers', context: 'All spend and conversion fields must be valid, non-negative numbers.' };
+            }
+            if (marginalCostLimitStr && (isNaN(marginalCostLimit) || marginalCostLimit < 0)) {
+                 return { type: 'error', title: 'Invalid Limit', hero: 'Check Limit', context: 'Marginal cost limit must be a non-negative number if provided.' };
+            }
+
+            const spendDiff = s2 - s1;
+            const convDiff = c2 - c1;
+            let marginalCostVal;
+            let baseContext = ""; // For modeling context
+            let mainCalcContext = ""; // For the core calculation explanation
+
+            if (isModeling) {
+                const originalP2Spend = parseFloat(originalP2SpendStr);
+                const originalP2Conv = parseFloat(originalP2ConvStr);
+                const nAdd = parseFloat(nAddStr);
+                const cpaAdd = parseFloat(cpaAddStr);
+                baseContext = `Modeled by adding ${nAdd} conversions (at $${cpaAdd.toFixed(2)} CPA) to Step 1's Period 2 data (Spend: $${originalP2Spend.toFixed(2)}, Conv: ${originalP2Conv}).<br/>Projected P2: Spend $${s2.toFixed(2)}, Conv: ${c2}.<br/>Compared against P1: Spend $${s1.toFixed(2)}, Conv: ${c1}.<br/>`;
+            }
+
+            if (convDiff < 0) {
+                if (spendDiff > 0) {
+                    mainCalcContext = `Spent $${spendDiff.toFixed(2)} more and lost ${Math.abs(convDiff)} conversions. Marginal cost is not applicable.`;
+                    result = { type: 'error', title: 'Critical Decline', hero: 'Action Required!', context: baseContext + mainCalcContext };
+                } else if (spendDiff < 0) { // Spent LESS and got FEWER conversions
+                    const cpa1 = (c1 > 0) ? s1 / c1 : Infinity;
+                    const cpa2 = (c2 > 0) ? s2 / c2 : Infinity;
+                    mainCalcContext = `Conversions fell by ${Math.abs(convDiff)} with $${Math.abs(spendDiff).toFixed(2)} less spend. `;
+
+                    if (c1 > 0 && c2 > 0 && cpa2 < cpa1) {
+                        mainCalcContext += `However, the Cost Per Acquisition (CPA) for Period 2 conversions ($${cpa2.toFixed(2)}) was better than Period 1 ($${cpa1.toFixed(2)}). Review overall strategy.`;
+                        result = { type: 'warning', title: 'Performance Declined (Improved CPA)', hero: 'Mixed Results', context: baseContext + mainCalcContext };
+                    } else if (c1 > 0 && c2 > 0 && cpa2 >= cpa1) {
+                        mainCalcContext += `The Cost Per Acquisition (CPA) for Period 2 conversions ($${cpa2.toFixed(2)}) was not better than Period 1 ($${cpa1.toFixed(2)}).`;
+                        result = { type: 'warning', title: 'Performance Declined', hero: 'Review Data', context: baseContext + mainCalcContext };
+                    } else {
+                        mainCalcContext += "Marginal cost is not directly comparable here.";
+                        result = { type: 'warning', title: 'Performance Declined', hero: 'Review Data', context: baseContext + mainCalcContext };
+                    }
+                } else { // spendDiff == 0
+                    mainCalcContext = `Conversions fell by ${Math.abs(convDiff)} with no change in spend. Marginal cost is not applicable.`;
+                    result = { type: 'error', title: 'Decline at Same Spend', hero: 'Concerning', context: baseContext + mainCalcContext};
+                }
+            } else if (s2 < s1) {
+                marginalCostVal = (convDiff > 0) ? spendDiff / convDiff : undefined;
+                if (convDiff > 0) {
+                    mainCalcContext = `You spent $${Math.abs(spendDiff).toFixed(2)} less and gained ${convDiff} conversions! Each effectively cost $${marginalCostVal.toFixed(2)}.`;
+                    result = { type: 'success', title: 'Excellent Efficiency!', hero: `$${marginalCostVal.toFixed(2)}`, context: baseContext + mainCalcContext };
+                } else { // convDiff is 0
+                    mainCalcContext = `Spend decreased by $${Math.abs(spendDiff).toFixed(2)} while conversions remained stable.`;
+                    result = { type: 'success', title: 'Improved Efficiency', hero: 'Cost Saved', context: baseContext + mainCalcContext };
+                }
+            } else if (convDiff === 0) {
+                if (spendDiff === 0) {
+                    mainCalcContext = 'No change in spend or conversions between periods.';
+                    result = { type: 'info', title: 'No Change', hero: 'Stable', context: baseContext + mainCalcContext };
+                } else { // spendDiff > 0
+                    mainCalcContext = `You spent an extra $${spendDiff.toFixed(2)} but gained no new conversions.`;
+                    result = { type: 'warning', title: 'Stagnant Conversions', hero: 'Inefficient Spend', context: baseContext + mainCalcContext };
+                }
+            } else { // Standard successful calculation: spendDiff >= 0, convDiff > 0
+                marginalCostVal = spendDiff / convDiff;
+                mainCalcContext = `Based on spending an additional $${spendDiff.toFixed(2)} to gain ${convDiff} conversions.`;
+                result = { type: 'success', title: 'Marginal Cost', hero: `$${marginalCostVal.toFixed(2)}`, context: baseContext + mainCalcContext };
+            }
+
+            // Append limit information
+            if (marginalCostVal !== undefined && !isNaN(marginalCostLimit) && marginalCostLimit >= 0) {
+                if (marginalCostVal > marginalCostLimit) {
+                    // If already an error, don't change type to warning. Keep title suffix for clarity.
+                    if (result.type !== 'error') result.type = 'warning';
+                    result.title += ' (Above Limit)';
+                    result.context += ` <strong class="text-yellow-700">This exceeds your limit of $${marginalCostLimit.toFixed(2)}.</strong>`;
+                } else if (result.type === 'success') {
+                     result.context += ` This is within your limit of $${marginalCostLimit.toFixed(2)}.`;
+                }
+            }
+            return result;
+        }
+
+        calculateBtn.addEventListener('click', () => {
+            const resultData = calculateMarginalCost(
+                s1Input.value, c1Input.value,
+                s2Input.value, c2Input.value,
+                marginalCostLimitInput.value,
+                false // isModeling = false
+            );
+            renderResult(initialResultContent, resultData);
+            initialResultSummaryContainer.classList.remove('hidden');
+            unifiedResultsCard.classList.remove('hidden');
+            noResultsMessage.classList.add('hidden');
+            unifiedResultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        modelBtn.addEventListener('click', () => {
+            let modelBaseS1Text = model_s1Input.value;
+            let modelBaseC1Text = model_c1Input.value;
+
+            if (!modelBaseS1Text.trim() && !modelBaseC1Text.trim()) {
+                modelBaseS1Text = s1Input.value;
+                modelBaseC1Text = c1Input.value;
+            } else if (!modelBaseS1Text.trim() || !modelBaseC1Text.trim()) {
+                renderResult(modeledResultContent, { type: 'error', title: 'Incomplete New P1 Data', hero: 'Check P1 Inputs', context: 'If providing new Period 1 data for modeling, both spend and conversions are required.' });
+                modeledResultSummaryContainer.classList.remove('hidden');
+                unifiedResultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+
+            const currentP2SpendStr = s2Input.value;
+            const currentP2ConvStr = c2Input.value;
+            const nAdditionalStr = nAddInput.value;
+            const cpaAdditionalStr = cpaAddInput.value;
+            const currentMarginalCostLimitStr = marginalCostLimitInput.value;
+
+            const modelBaseS1Num = parseFloat(modelBaseS1Text);
+            const modelBaseC1Num = parseFloat(modelBaseC1Text);
+            if (isNaN(modelBaseS1Num) || isNaN(modelBaseC1Num) || modelBaseS1Num < 0 || modelBaseC1Num < 0) {
+                renderResult(modeledResultContent, { type: 'error', title: 'Invalid P1 Baseline', hero: 'Check P1 Data', context: 'The Period 1 baseline data (either from Step 1 or new inputs) must be valid non-negative numbers.' });
+                modeledResultSummaryContainer.classList.remove('hidden');
+                unifiedResultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+
+            const currentP2SpendNum = parseFloat(currentP2SpendStr);
+            const currentP2ConvNum = parseFloat(currentP2ConvStr);
+            if (isNaN(currentP2SpendNum) || isNaN(currentP2ConvNum) || currentP2SpendNum < 0 || currentP2ConvNum < 0) {
+                renderResult(modeledResultContent, { type: 'error', title: 'Invalid P2 Data from Step 1', hero: 'Check Step 1 P2', context: 'Period 2 data from Step 1 (used for projection) must be valid non-negative numbers.' });
+                modeledResultSummaryContainer.classList.remove('hidden');
+                unifiedResultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+
+            const nAdditionalNum = parseFloat(nAdditionalStr);
+            const cpaAdditionalNum = parseFloat(cpaAdditionalStr);
+            if (isNaN(nAdditionalNum) || isNaN(cpaAdditionalNum) || nAdditionalNum <= 0 || cpaAdditionalNum < 0) {
+                renderResult(modeledResultContent, { type: 'error', title: 'Invalid Modeling Input', hero: 'Check N or CPA', context: 'Additional conversions (N) must be a positive number, and Assumed CPA must be non-negative.' });
+                modeledResultSummaryContainer.classList.remove('hidden');
+                unifiedResultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                return;
+            }
+
+            const projectedS2 = currentP2SpendNum + (nAdditionalNum * cpaAdditionalNum);
+            const projectedC2 = currentP2ConvNum + nAdditionalNum;
+
+            const modelCalcResult = calculateMarginalCost(
+                modelBaseS1Text, modelBaseC1Text,
+                projectedS2.toString(), projectedC2.toString(),
+                currentMarginalCostLimitStr,
+                true,
+                currentP2SpendStr, currentP2ConvStr, nAdditionalStr, cpaAdditionalStr
+            );
+
+            renderResult(modeledResultContent, modelCalcResult);
+            modeledResultSummaryContainer.classList.remove('hidden');
+            unifiedResultsCard.classList.remove('hidden');
+            noResultsMessage.classList.add('hidden');
+            unifiedResultsCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        });
+
+        if (initialResultSummaryContainer.classList.contains('hidden') && modeledResultSummaryContainer.classList.contains('hidden')) {
+            noResultsMessage.classList.remove('hidden');
+        }
+    </script>
+</body>
+</html>
